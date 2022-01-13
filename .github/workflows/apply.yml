@@ -1,0 +1,46 @@
+name: Terraform apply
+
+env:
+  TERRAFORM_VERSION: 1.1.2  # edit
+
+  AWS_ROLE_ARN: arn:aws:iam::****:role/******* # Change to the Arn of the Role created by CloudFormation
+
+  AWS_REGION: "" ## Edit
+
+
+permissions:
+  contents: read
+  id-token: write
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "**.tf"
+      - "**.tfvars"
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
+
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+
+      - name: Apply
+        run: |
+            terraform init
+            terraform apply -auto-approve
